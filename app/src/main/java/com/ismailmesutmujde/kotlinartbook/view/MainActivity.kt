@@ -5,19 +5,51 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.ismailmesutmujde.kotlinartbook.R
+import com.ismailmesutmujde.kotlinartbook.adapter.ArtAdapter
 import com.ismailmesutmujde.kotlinartbook.databinding.ActivityMainBinding
+import com.ismailmesutmujde.kotlinartbook.model.Art
 
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var bindingMainActivity: ActivityMainBinding
+    private lateinit var artList : ArrayList<Art>
+    private lateinit var artAdapter : ArtAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         bindingMainActivity = ActivityMainBinding.inflate(layoutInflater)
         val view = bindingMainActivity.root
         setContentView(view)
+
+        artList = ArrayList<Art>()
+        bindingMainActivity.recyclerView.layoutManager = LinearLayoutManager(this)
+        bindingMainActivity.recyclerView.adapter = artAdapter
+
+        try {
+
+            val database = this.openOrCreateDatabase("Arts", MODE_PRIVATE, null)
+
+            val cursor = database.rawQuery("SELECT * FROM arts", null)
+            val artNameIx = cursor.getColumnIndex("artname")
+            val idIx = cursor.getColumnIndex("id")
+
+            while (cursor.moveToNext()) {
+                val name = cursor.getString(artNameIx)
+                val id = cursor.getInt(idIx)
+                val art = Art(name, id)
+                artList.add(art)
+            }
+
+            artAdapter.notifyDataSetChanged()
+
+            cursor.close()
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     // onCreateOptionsMenu : options menüyü, Main Activity'e bağlama işlemi yapılır.
