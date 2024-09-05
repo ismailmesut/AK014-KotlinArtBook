@@ -43,6 +43,35 @@ class ArtActivity : AppCompatActivity() {
 
     fun saveButtonClicked(view : View) {
 
+        val artName = bindingArtActivity.artNameText.text.toString()
+        val artistName = bindingArtActivity.artistNameText.text.toString()
+        val year = bindingArtActivity.yearText.text.toString()
+
+        if (selectedBitmap != null) {
+            val smallBitmap = makeSmallerBitmap(selectedBitmap!!, 300)
+        }
+
+    }
+
+    private fun makeSmallerBitmap (image : Bitmap,maximumSize : Int) : Bitmap {
+        var width = image.width
+        var height = image.height
+
+        var bitmapRatio : Double = width.toDouble() / height.toDouble()
+
+        if (bitmapRatio > 1) {
+            // landscape (yatay)
+            width = maximumSize
+            val scaledHeight = width / bitmapRatio
+            height = scaledHeight.toInt()
+        } else {
+            // portrait (dikey)
+            height = maximumSize
+            val scaledWidth = height * bitmapRatio
+            width = scaledWidth.toInt()
+        }
+
+        return Bitmap.createScaledBitmap(image,100,100, true)
     }
 
     fun selectImage(view : View) {
