@@ -3,7 +3,9 @@ package com.ismailmesutmujde.kotlinartbook.view
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.sqlite.SQLiteDatabase
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.media.Image
 import android.os.Build
@@ -16,11 +18,13 @@ import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.snackbar.Snackbar
+import com.ismailmesutmujde.kotlinartbook.R
 import com.ismailmesutmujde.kotlinartbook.databinding.ActivityArtBinding
 import java.io.ByteArrayOutputStream
 
@@ -33,13 +37,50 @@ class ArtActivity : AppCompatActivity() {
 
     var selectedBitmap : Bitmap? = null
 
+    private lateinit var database : SQLiteDatabase
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         bindingArtActivity = ActivityArtBinding.inflate(layoutInflater)
         val view = bindingArtActivity.root
         setContentView(view)
 
+        database = this.openOrCreateDatabase("Arts", MODE_PRIVATE, null)
+
         registerLauncher()
+
+        val intent = intent
+        val info = intent.getStringExtra("info")
+
+        if  (info.equals("new")) {
+            // yeni item'ı gösterir
+            bindingArtActivity.artNameText.setText("")
+            bindingArtActivity.artistNameText.setText("")
+            bindingArtActivity.yearText.setText("")
+            bindingArtActivity.imageView.setImageResource(R.drawable.selectimage)
+            bindingArtActivity.saveButton.visibility = View.VISIBLE
+        } else {
+            // eski item'ı gösterir
+            bindingArtActivity.saveButton.visibility = View.INVISIBLE
+            val selectedId = intent.getIntExtra("id", 1)
+            val cursor = database.rawQuery("SELECT * FROM arts WHERE id = ?", arrayOf(selectedId.toString()))
+            val artNameIx = cursor.getColumnIndex("artname")
+            val artistNameIx = cursor.getColumnIndex("artistname")
+            val yearIx = cursor.getColumnIndex("year")
+            val imageIx = cursor.getColumnIndex("image")
+
+            while (cursor.moveToNext()) {
+                bindingArtActivity.artNameText.setText(cursor.getString(artNameIx))
+                bindingArtActivity.artistNameText.setText(cursor.getString(artistNameIx))
+                bindingArtActivity.yearText.setText(cursor.getString(yearIx))
+
+                val byteArray = cursor.getBlob(imageIx)
+                val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+                bindingArtActivity.imageView.setImageBitmap(bitmap)
+
+            }
+            cursor.close()
+        }
     }
 
     fun saveButtonClicked(view : View) {
@@ -58,7 +99,7 @@ class ArtActivity : AppCompatActivity() {
 
             try {
                 // create database
-                val database = this.openOrCreateDatabase("Arts", MODE_PRIVATE, null)
+                //val database = this.openOrCreateDatabase("Arts", MODE_PRIVATE, null)
                 // create table
                 database.execSQL("CREATE TABLE IF NOT EXISTS arts (id INTEGER PRIMARY KEY, artname VARCHAR, artistname VARCHAR, year VARCHAR, image BLOB)")
 
